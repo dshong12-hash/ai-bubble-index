@@ -522,18 +522,25 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
     for y0, y1, r in [(0,30,"green"),(30,55,"yellow"),(55,75,"orange"),(75,100,"red")]:
         fig.add_hrect(y0=y0, y1=y1, fillcolor=REGIME_BG[r], line_width=0, layer="below", row=1, col=1)
 
-    fig.add_trace(go.Scatter(x=bi.index, y=bi.values, name="Bubble Index",
-                             line=dict(color="#1a1f2e", width=2), showlegend=True), row=1, col=1)
+    fig.add_trace(go.Scatter(
+        x=bi.index, y=bi.values, name="Bubble Index",
+        line=dict(color="#1a1f2e", width=2), showlegend=True,
+        hovertemplate="🫧 Bubble Index: <b>%{y:.1f}</b><extra></extra>",
+    ), row=1, col=1)
     fig.add_hline(y=70, line_dash="dash", line_color="#e67e22", line_width=1.2, row=1, col=1)
 
-    fig.add_trace(go.Scatter(x=spx.index, y=spx.values, name="S&P 500",
-                             line=dict(color="#2980b9", width=1.8), showlegend=True), row=2, col=1)
+    fig.add_trace(go.Scatter(
+        x=spx.index, y=spx.values, name="S&P 500",
+        line=dict(color="#2980b9", width=1.8), showlegend=True,
+        hovertemplate="📈 S&P 500: <b>%{y:,.0f}</b><extra></extra>",
+    ), row=2, col=1)
 
     # Drawdown: fill below zero
     fig.add_trace(go.Scatter(
         x=spx_dd.index, y=spx_dd.values, name="SPX 낙폭",
         fill="tozeroy", fillcolor="rgba(231,76,60,.25)",
         line=dict(color="#c0392b", width=1), showlegend=True,
+        hovertemplate="📉 고점 대비 낙폭: <b>%{y:.1f}%</b><extra></extra>",
     ), row=3, col=1)
     fig.add_hline(y=-20, line_dash="dot", line_color="#7f8c8d", line_width=1, row=3, col=1)
 
@@ -565,18 +572,32 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
             )
 
     fig.update_yaxes(range=[0, 100], row=1, col=1, gridcolor="#f0f2f6",
-                     tickfont=dict(color="#2c3e50"))
+                     tickfont=dict(color="#2c3e50"),
+                     showspikes=True, spikecolor="#aaaaaa",
+                     spikethickness=1, spikedash="dot")
     fig.update_yaxes(type="log", row=2, col=1, gridcolor="#f0f2f6",
-                     tickfont=dict(color="#2c3e50"))
+                     tickfont=dict(color="#2c3e50"),
+                     showspikes=True, spikecolor="#aaaaaa",
+                     spikethickness=1, spikedash="dot")
     fig.update_yaxes(range=[-65, 5], row=3, col=1, gridcolor="#f0f2f6",
-                     tickfont=dict(color="#2c3e50"))
-    fig.update_xaxes(showgrid=False, tickfont=dict(color="#2c3e50"))
+                     tickfont=dict(color="#2c3e50"),
+                     showspikes=True, spikecolor="#aaaaaa",
+                     spikethickness=1, spikedash="dot")
+    # x축 스파이크: shared_xaxes=True 이므로 3개 패널에 수직선이 동시 표시됨
+    fig.update_xaxes(
+        showgrid=False, tickfont=dict(color="#2c3e50"),
+        showspikes=True, spikemode="across",
+        spikedash="dot", spikecolor="#555555",
+        spikethickness=1.5, spikesnap="cursor",
+    )
     fig.update_layout(
         height=600,
         margin=dict(l=50, r=20, t=50, b=30),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                     font=dict(size=11, color="#2c3e50")),
         hovermode="x unified",
+        hoverdistance=100,
+        spikedistance=1000,
         plot_bgcolor="white", paper_bgcolor="white",
         font=dict(color="#2c3e50", family="system-ui, -apple-system, sans-serif"),
     )
