@@ -587,9 +587,7 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
                          title_text="Index", title_font=dict(color="#aaaaaa", size=9))
 
     # Crash event overlays
-    event_colors = {"GFC": "#c0392b", "post_covid": "#8e44ad",
-                    "Post-COVID 랠리": "#8e44ad", "post_covid": "#8e44ad"}
-    for ev_label, _, crash_top, crash_bot, in CRASH_EVENTS:
+    for ev_label, _, crash_top, crash_bot in CRASH_EVENTS:
         ec = "#c0392b" if "gfc" in ev_label.lower() else "#8e44ad"
         ct, cb = pd.Timestamp(crash_top), pd.Timestamp(crash_bot)
         for r in range(1, 4):
@@ -773,10 +771,6 @@ def main():
         </div>""", unsafe_allow_html=True)
 
         # Narrative analysis
-        latest_metrics = (
-            metrics_df.dropna(how="all").iloc[-1]
-            if not metrics_df.empty else pd.Series(dtype=float)
-        )
         st.markdown(
             build_narrative_html(scores_df, metrics_df, latest, bt_df),
             unsafe_allow_html=True,
