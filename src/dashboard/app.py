@@ -156,8 +156,17 @@ def inject_css():
     [data-testid="stTabs"] [role="tab"] {
         font-size: 13.5px; font-weight: 600; padding: 6px 18px;
         border-radius: 8px 8px 0 0;
+        color: #4a5568 !important;
+        opacity: 1 !important;
     }
-    [data-testid="stTabs"] [aria-selected="true"] { color: #e67e22 !important; }
+    [data-testid="stTabs"] [role="tab"]:hover {
+        color: #1a202c !important;
+        background: rgba(230,126,34,0.08);
+    }
+    [data-testid="stTabs"] [aria-selected="true"] {
+        color: #e67e22 !important;
+        font-weight: 700 !important;
+    }
 
     /* ── DataFrame ── */
     [data-testid="stDataFrame"] { border-radius: 10px; overflow: hidden; }
