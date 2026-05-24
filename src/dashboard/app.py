@@ -821,17 +821,84 @@ def main():
         st.markdown("<br>", unsafe_allow_html=True)
         section("⚙️", "계산 방법")
         st.markdown("""
-        | 단계 | 처리 | 설명 |
-        |---|---|---|
-        | 1 | **원시 지표 수집** | FRED, Yahoo Finance, NY Fed에서 일별 데이터 수집 |
-        | 2 | **롤링 백분위 정규화** | 24개월(504거래일) 이동 창에서 현재 값의 백분위 순위 → 0~100 |
-        | 3 | **방향 반전** | 스프레드 계열(HY OAS 등)은 좁을수록 거품 → `100 - 백분위` |
-        | 4 | **기둥 내 평균** | 동일 기둥의 지표들을 산술평균 |
-        | 5 | **가중 합산** | 이론 가중치로 기둥 점수를 가중 평균 |
-        | 6 | **EMA 스무딩** | 28일 지수이동평균 적용 (노이즈 제거) |
-
-        **레짐 기준:** Green ≤ 30 < Yellow ≤ 55 < Orange ≤ 75 < Red
-        """)
+<style>
+.calc-table { width:100%; border-collapse:collapse; margin-bottom:16px; }
+.calc-table th {
+    background:#2c3e50; color:#ecf0f1;
+    padding:10px 14px; text-align:left;
+    font-size:13px; font-weight:600; border-bottom:2px solid #e67e22;
+}
+.calc-table td {
+    padding:10px 14px; border-bottom:1px solid #dde3ec;
+    color:#1a1d27; font-size:13px; vertical-align:top;
+    background:#ffffff;
+}
+.calc-table tr:nth-child(even) td { background:#f4f6fb; }
+.calc-table tr:hover td { background:#eaf0fb; }
+.calc-table .step-num {
+    color:#e67e22; font-weight:700; font-size:15px; text-align:center;
+}
+.calc-table .step-name { font-weight:600; color:#2c3e50; }
+.calc-table code {
+    background:#f0f3f8; color:#c0392b;
+    padding:1px 5px; border-radius:3px; font-size:12px;
+}
+.regime-bar {
+    margin-top:8px; padding:10px 16px; border-radius:8px;
+    background:#2c3e50; color:#ecf0f1; font-size:13px; font-weight:500;
+}
+.regime-bar span { font-weight:700; }
+</style>
+<table class="calc-table">
+  <thead>
+    <tr><th>단계</th><th>처리</th><th>설명</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="step-num">1</td>
+      <td class="step-name">원시 지표 수집</td>
+      <td>FRED, Yahoo Finance, NY Fed에서 일별 데이터 수집</td>
+    </tr>
+    <tr>
+      <td class="step-num">2</td>
+      <td class="step-name">롤링 백분위 정규화</td>
+      <td>24개월(504거래일) 이동 창에서 현재 값의 백분위 순위 → 0~100</td>
+    </tr>
+    <tr>
+      <td class="step-num">3</td>
+      <td class="step-name">방향 반전</td>
+      <td>스프레드 계열(HY OAS 등)은 좁을수록 거품 → <code>100 - 백분위</code></td>
+    </tr>
+    <tr>
+      <td class="step-num">4</td>
+      <td class="step-name">기둥 내 평균</td>
+      <td>동일 기둥의 지표들을 산술평균</td>
+    </tr>
+    <tr>
+      <td class="step-num">5</td>
+      <td class="step-name">불투명성 페널티</td>
+      <td>정보 공개 의무가 낮은 필라(사모 크레딧)에 상향 보정 배수 적용 — 현재 ×1.20</td>
+    </tr>
+    <tr>
+      <td class="step-num">6</td>
+      <td class="step-name">가중 합산</td>
+      <td>이론 가중치로 기둥 점수를 가중 평균</td>
+    </tr>
+    <tr>
+      <td class="step-num">7</td>
+      <td class="step-name">EMA 스무딩</td>
+      <td>28일 지수이동평균 적용 (노이즈 제거)</td>
+    </tr>
+  </tbody>
+</table>
+<div class="regime-bar">
+  📊 레짐 기준 &nbsp;|&nbsp;
+  <span style="color:#27ae60">Green ≤ 30</span> &nbsp;＜&nbsp;
+  <span style="color:#f39c12">Yellow ≤ 55</span> &nbsp;＜&nbsp;
+  <span style="color:#e67e22">Orange ≤ 75</span> &nbsp;＜&nbsp;
+  <span style="color:#e74c3c">Red</span>
+</div>
+""", unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
