@@ -752,7 +752,7 @@ def main():
                     if v < 0:  return "background-color:#fef0ed; color:#922b21"
                     if v > 5:  return "background-color:#d5f5e3; color:#1e8449"
                     return "background-color:#fef9e7; color:#7d6608"
-                st.dataframe(pivot.style.applymap(color_cell).format("{:+.1f}%"),
+                st.dataframe(pivot.style.map(color_cell).format("{:+.1f}%"),
                              use_container_width=True)
                 st.caption("각 셀: 해당 레짐에서 향후 N개월 평균 SPX 수익률")
 
