@@ -560,6 +560,7 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
         x=bi_a.index, y=bi_a.values, name="Bubble Index (참조)",
         line=dict(color="#1a1f2e", width=1.2, dash="dot"),
         opacity=0.45, showlegend=True, hoverinfo="skip",
+        visible="legendonly",
     ), row=2, col=1, secondary_y=True)
 
     # ── Panel 3: SPX 낙폭 (메인) + Bubble Index (보조 우측 축, 반투명) ──
@@ -575,6 +576,7 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
         x=bi_a.index, y=bi_a.values, name="Bubble Index (참조)",
         line=dict(color="#1a1f2e", width=1.2, dash="dot"),
         opacity=0.45, showlegend=False, hoverinfo="skip",
+        visible="legendonly",
     ), row=3, col=1, secondary_y=True)
 
     # 보조 y축(Bubble Index 참조선) 설정 — 0~100 고정, 눈금 오른쪽에 표시
