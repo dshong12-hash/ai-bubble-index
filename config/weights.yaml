@@ -1,0 +1,106 @@
+# AI Bubble Index — Configuration
+# 이론 기반 가중치. config 파일로 분리하여 민감도 분석 시 용이하게 변경.
+
+# ---- Pillar weights (must sum to 1.0) ----
+pillar_weights:
+  private_credit: 0.35   # Pillar 3 — 결정적 후행 (Minsky trigger)
+  bond_vigilantes: 0.30  # Pillar 2 — 동행 (macro constraint)
+  concentration: 0.20    # Pillar 1 — 선행 (crowd psychology)
+  ipo_saturation: 0.15   # Pillar 4 — 동행~후행 (euphoria peak)
+
+# ---- Regime thresholds (0~100 score) ----
+regime_thresholds:
+  green_max: 30
+  yellow_max: 55
+  orange_max: 75
+  # >75 = Red
+
+# ---- Rolling percentile window ----
+rolling_window_months: 24
+
+# ---- EMA smoothing ----
+ema_span_days: 28  # ~4 weeks
+
+# ---- Metric definitions ----
+# direction: +1 = 값이 클수록 거품 신호, -1 = 작을수록 거품 신호 (부호 반전)
+metrics:
+  # ===== Pillar 1: Concentration =====
+  concentration:
+    spx_vs_rsp_12m:
+      desc: "S&P500 vs Equal Weight 12개월 누적 수익률 스프레드"
+      source: yahoo
+      tickers: ["^GSPC", "RSP"]
+      direction: +1
+    top10_weight:
+      desc: "S&P500 상위 10종목 시총 비중"
+      source: scraped
+      url: "https://www.slickcharts.com/sp500"
+      direction: +1
+
+  # ===== Pillar 2: Bond Vigilantes =====
+  bond_vigilantes:
+    us_30y_yield:
+      desc: "US 30Y Treasury Yield"
+      source: fred
+      code: DGS30
+      direction: +1
+    us_10y_yield:
+      desc: "US 10Y Treasury Yield"
+      source: fred
+      code: DGS10
+      direction: +1
+    us_10y_real:
+      desc: "US 10Y Real Yield (TIPS)"
+      source: fred
+      code: DFII10
+      direction: +1
+    term_premium_10y:
+      desc: "10Y Term Premium (ACM model)"
+      source: nyfed
+      code: ACMTP10
+      direction: +1
+    move_index:
+      desc: "MOVE Index (채권 변동성)"
+      source: yahoo
+      ticker: "^MOVE"
+      direction: +1
+
+  # ===== Pillar 3: Private Credit =====
+  private_credit:
+    hy_oas:
+      desc: "HY OAS Spread"
+      source: fred
+      code: BAMLH0A0HYM2
+      direction: -1   # 좁을수록 froth
+    ccc_spread:
+      desc: "CCC급 HY Spread"
+      source: fred
+      code: BAMLH0A3HYC
+      direction: -1   # 좁을수록 froth
+    bdc_etf:
+      desc: "BDC ETF 가격 (BIZD) — 상승할수록 낙관"
+      source: yahoo
+      ticker: "BIZD"
+      direction: +1
+    leveraged_loan:
+      desc: "레버리지론 ETF (BKLN) 가격"
+      source: yahoo
+      ticker: "BKLN"
+      direction: +1
+
+  # ===== Pillar 4: IPO Saturation =====
+  ipo_saturation:
+    ipo_etf:
+      desc: "Renaissance IPO ETF — 강세일수록 IPO 광풍"
+      source: yahoo
+      ticker: "IPO"
+      direction: +1
+    ipo_etf_relative:
+      desc: "IPO ETF vs SPY 상대 강도"
+      source: yahoo
+      tickers: ["IPO", "SPY"]
+      direction: +1
+    ritter_first_day:
+      desc: "IPO 첫날 수익률 중위값 (Ritter)"
+      source: ritter
+      direction: +1

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.ai-bubble-index.daily</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/dongsik/Downloads/ai_bubble_index_phase1/run_daily.sh</string>
+  </array>
+
+  <!-- 평일(월~금) 오전 06:30 KST 실행
+       미국 전일 장 마감(04:00 ET → 18:00 KST) 후 FRED/Yahoo 데이터가
+       확정되는 시각 기준. 필요 시 Hour 값을 조정하세요. -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Weekday</key><integer>1</integer><key>Hour</key><integer>6</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>2</integer><key>Hour</key><integer>6</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>3</integer><key>Hour</key><integer>6</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>4</integer><key>Hour</key><integer>6</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Weekday</key><integer>5</integer><key>Hour</key><integer>6</integer><key>Minute</key><integer>30</integer></dict>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/dongsik/Downloads/ai_bubble_index_phase1</string>
+
+  <key>StandardOutPath</key>
+  <string>/Users/dongsik/Downloads/ai_bubble_index_phase1/logs/launchd.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/dongsik/Downloads/ai_bubble_index_phase1/logs/launchd.log</string>
+
+  <!-- 실행 실패 시 60초 후 재시도 -->
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>
