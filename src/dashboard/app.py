@@ -52,6 +52,17 @@ def inject_css():
     <style>
     /* ── Base ── */
     [data-testid="stAppViewContainer"] { background: #f0f2f6; }
+    [data-testid="stAppViewContainer"] p,
+    [data-testid="stAppViewContainer"] span,
+    [data-testid="stAppViewContainer"] div,
+    [data-testid="stAppViewContainer"] label,
+    [data-testid="stAppViewContainer"] li,
+    [data-testid="stAppViewContainer"] td,
+    [data-testid="stAppViewContainer"] th { color: #1a1f2e; }
+    /* caption / help text — 너무 흐리지 않게 */
+    [data-testid="stAppViewContainer"] small,
+    [data-testid="stCaptionContainer"] { color: #4a5568 !important; }
+
     [data-testid="stSidebar"]          { background: #1a1f2e; }
     [data-testid="stSidebar"] * { color: #e8ecf3 !important; }
     [data-testid="stSidebar"] .stButton button {
@@ -409,11 +420,13 @@ def build_main_chart(scores_df, start):
     ))
     fig.update_layout(
         height=400, margin=dict(l=40, r=20, t=20, b=30),
-        yaxis=dict(range=[0,100], title="", ticksuffix=" ", gridcolor="#f0f2f6"),
-        xaxis=dict(title="", showgrid=False),
-        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1, font_size=11),
+        yaxis=dict(range=[0,100], title="", ticksuffix=" ", gridcolor="#f0f2f6",
+                   tickfont=dict(color="#2c3e50")),
+        xaxis=dict(title="", showgrid=False, tickfont=dict(color="#2c3e50")),
+        legend=dict(orientation="h", yanchor="bottom", y=1.01, xanchor="right", x=1,
+                    font=dict(size=11, color="#2c3e50")),
         hovermode="x unified", plot_bgcolor="white", paper_bgcolor="white",
-        font=dict(family="system-ui, -apple-system, sans-serif"),
+        font=dict(color="#2c3e50", family="system-ui, -apple-system, sans-serif"),
     )
     return fig
 
@@ -439,11 +452,12 @@ def build_pillar_chart(latest):
     ))
     fig.update_layout(
         height=260, margin=dict(l=8, r=20, t=8, b=8),
-        xaxis=dict(range=[0,100], showgrid=True, gridcolor="#f0f2f6", zeroline=False),
-        yaxis=dict(autorange="reversed"),
+        xaxis=dict(range=[0,100], showgrid=True, gridcolor="#f0f2f6", zeroline=False,
+                   tickfont=dict(color="#2c3e50")),
+        yaxis=dict(autorange="reversed", tickfont=dict(color="#2c3e50", size=12)),
         plot_bgcolor="white", paper_bgcolor="white",
         showlegend=False,
-        font=dict(family="system-ui, -apple-system, sans-serif"),
+        font=dict(color="#2c3e50", family="system-ui, -apple-system, sans-serif"),
     )
     return fig
 
@@ -480,10 +494,13 @@ def build_heatmap(norm_df, n=60):
     ))
     fig.update_layout(
         height=300, margin=dict(l=8, r=8, t=8, b=40),
-        xaxis=dict(tickangle=-45, nticks=8, showgrid=False),
-        yaxis=dict(autorange="reversed", tickfont_size=10),
+        xaxis=dict(tickangle=-45, nticks=8, showgrid=False,
+                   tickfont=dict(color="#2c3e50", size=9)),
+        yaxis=dict(autorange="reversed", tickfont=dict(color="#2c3e50", size=10)),
+        coloraxis_colorbar=dict(title=dict(text="점수", font=dict(color="#2c3e50")),
+                                tickfont=dict(color="#2c3e50")),
         plot_bgcolor="white", paper_bgcolor="white",
-        font=dict(family="system-ui, -apple-system, sans-serif"),
+        font=dict(color="#2c3e50", family="system-ui, -apple-system, sans-serif"),
     )
     return fig
 
@@ -547,17 +564,21 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
                 borderpad=3, row=1, col=1,
             )
 
-    fig.update_yaxes(range=[0, 100], row=1, col=1, gridcolor="#f0f2f6")
-    fig.update_yaxes(type="log", row=2, col=1, gridcolor="#f0f2f6")
-    fig.update_yaxes(range=[-65, 5], row=3, col=1, gridcolor="#f0f2f6")
-    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(range=[0, 100], row=1, col=1, gridcolor="#f0f2f6",
+                     tickfont=dict(color="#2c3e50"))
+    fig.update_yaxes(type="log", row=2, col=1, gridcolor="#f0f2f6",
+                     tickfont=dict(color="#2c3e50"))
+    fig.update_yaxes(range=[-65, 5], row=3, col=1, gridcolor="#f0f2f6",
+                     tickfont=dict(color="#2c3e50"))
+    fig.update_xaxes(showgrid=False, tickfont=dict(color="#2c3e50"))
     fig.update_layout(
         height=600,
         margin=dict(l=50, r=20, t=50, b=30),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font_size=11),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+                    font=dict(size=11, color="#2c3e50")),
         hovermode="x unified",
         plot_bgcolor="white", paper_bgcolor="white",
-        font=dict(family="system-ui, -apple-system, sans-serif"),
+        font=dict(color="#2c3e50", family="system-ui, -apple-system, sans-serif"),
     )
     return fig
 
