@@ -507,9 +507,26 @@ def build_heatmap(norm_df, n=60):
 
 def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
     start_ts = pd.Timestamp(start)
-    bi    = bi[bi.index >= start_ts]
-    spx   = spx[spx.index >= start_ts]
+    bi     = bi[bi.index >= start_ts]
+    spx    = spx[spx.index >= start_ts]
     spx_dd = spx_dd[spx_dd.index >= start_ts]
+
+    # 공통 인덱스 정렬 — customdata로 3개 값을 각 trace에 모두 담음
+    common_idx = bi.index.intersection(spx.index).intersection(spx_dd.index)
+    bi_a   = bi.reindex(common_idx).ffill()
+    spx_a  = spx.reindex(common_idx).ffill()
+    dd_a   = spx_dd.reindex(common_idx).ffill()
+    # customdata columns: [0]=bi, [1]=spx, [2]=dd
+    cdata  = np.column_stack([bi_a.values, spx_a.values, dd_a.values])
+
+    # 모든 패널에서 호버 시 3개 값을 한 번에 표시하는 템플릿
+    _htpl = (
+        "<b>📅 %{x|%Y-%m-%d}</b><br>"
+        "<span style='color:#1a1f2e'>🫧 Bubble Index : <b>%{customdata[0]:.1f}</b></span><br>"
+        "<span style='color:#2980b9'>📈 S&amp;P 500 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: <b>%{customdata[1]:,.0f}</b></span><br>"
+        "<span style='color:#c0392b'>📉 SPX 낙폭 &nbsp;&nbsp;&nbsp;&nbsp;: <b>%{customdata[2]:.1f}%</b></span>"
+        "<extra></extra>"
+    )
 
     fig = make_subplots(
         rows=3, cols=1, shared_xaxes=True,
@@ -523,24 +540,27 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
         fig.add_hrect(y0=y0, y1=y1, fillcolor=REGIME_BG[r], line_width=0, layer="below", row=1, col=1)
 
     fig.add_trace(go.Scatter(
-        x=bi.index, y=bi.values, name="Bubble Index",
+        x=bi_a.index, y=bi_a.values, name="Bubble Index",
+        customdata=cdata,
         line=dict(color="#1a1f2e", width=2), showlegend=True,
-        hovertemplate="🫧 Bubble Index: <b>%{y:.1f}</b><extra></extra>",
+        hovertemplate=_htpl,
     ), row=1, col=1)
     fig.add_hline(y=70, line_dash="dash", line_color="#e67e22", line_width=1.2, row=1, col=1)
 
     fig.add_trace(go.Scatter(
-        x=spx.index, y=spx.values, name="S&P 500",
+        x=spx_a.index, y=spx_a.values, name="S&P 500",
+        customdata=cdata,
         line=dict(color="#2980b9", width=1.8), showlegend=True,
-        hovertemplate="📈 S&P 500: <b>%{y:,.0f}</b><extra></extra>",
+        hovertemplate=_htpl,
     ), row=2, col=1)
 
     # Drawdown: fill below zero
     fig.add_trace(go.Scatter(
-        x=spx_dd.index, y=spx_dd.values, name="SPX 낙폭",
+        x=dd_a.index, y=dd_a.values, name="SPX 낙폭",
+        customdata=cdata,
         fill="tozeroy", fillcolor="rgba(231,76,60,.25)",
         line=dict(color="#c0392b", width=1), showlegend=True,
-        hovertemplate="📉 고점 대비 낙폭: <b>%{y:.1f}%</b><extra></extra>",
+        hovertemplate=_htpl,
     ), row=3, col=1)
     fig.add_hline(y=-20, line_dash="dot", line_color="#7f8c8d", line_width=1, row=3, col=1)
 
@@ -579,12 +599,12 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
     fig.update_yaxes(range=[-65, 5],  row=3, col=1, gridcolor="#e8ecf3",
                      tickfont=dict(color="#2c3e50"))
 
-    # x축 스파이크: 각 row에 개별 적용 (shared_xaxes 환경에서 일괄 설정이 안 먹힘)
+    # x축: 각 row 개별 적용
     _spike = dict(
         showgrid=False, tickfont=dict(color="#2c3e50"),
         showspikes=True, spikemode="across+toaxis",
         spikedash="dot", spikecolor="#444444",
-        spikethickness=1.5, spikesnap="cursor",
+        spikethickness=2, spikesnap="cursor",
     )
     fig.update_xaxes(**_spike, row=1, col=1)
     fig.update_xaxes(**_spike, row=2, col=1)
@@ -595,7 +615,10 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
         margin=dict(l=50, r=20, t=50, b=30),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                     font=dict(size=11, color="#2c3e50")),
-        hovermode="x",          # "x unified" 대신 "x" — 스파이크 라인이 더 확실히 동작
+        # hovermode="x": 각 패널에서 호버 시 customdata 기반 풍부한 툴팁 표시
+        # hoversubplots="axis": shared x-axis 패널들에 hover 이벤트 전파
+        hovermode="x",
+        hoversubplots="axis",
         hoverdistance=200,
         spikedistance=1000,
         plot_bgcolor="white", paper_bgcolor="white",
