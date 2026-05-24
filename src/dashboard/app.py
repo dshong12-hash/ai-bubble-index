@@ -571,32 +571,32 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
                 borderpad=3, row=1, col=1,
             )
 
-    fig.update_yaxes(range=[0, 100], row=1, col=1, gridcolor="#f0f2f6",
-                     tickfont=dict(color="#2c3e50"),
-                     showspikes=True, spikecolor="#aaaaaa",
-                     spikethickness=1, spikedash="dot")
-    fig.update_yaxes(type="log", row=2, col=1, gridcolor="#f0f2f6",
-                     tickfont=dict(color="#2c3e50"),
-                     showspikes=True, spikecolor="#aaaaaa",
-                     spikethickness=1, spikedash="dot")
-    fig.update_yaxes(range=[-65, 5], row=3, col=1, gridcolor="#f0f2f6",
-                     tickfont=dict(color="#2c3e50"),
-                     showspikes=True, spikecolor="#aaaaaa",
-                     spikethickness=1, spikedash="dot")
-    # x축 스파이크: shared_xaxes=True 이므로 3개 패널에 수직선이 동시 표시됨
-    fig.update_xaxes(
+    # y축: 각 패널별 명시 설정
+    fig.update_yaxes(range=[0, 100],  row=1, col=1, gridcolor="#e8ecf3",
+                     tickfont=dict(color="#2c3e50"))
+    fig.update_yaxes(type="log",      row=2, col=1, gridcolor="#e8ecf3",
+                     tickfont=dict(color="#2c3e50"))
+    fig.update_yaxes(range=[-65, 5],  row=3, col=1, gridcolor="#e8ecf3",
+                     tickfont=dict(color="#2c3e50"))
+
+    # x축 스파이크: 각 row에 개별 적용 (shared_xaxes 환경에서 일괄 설정이 안 먹힘)
+    _spike = dict(
         showgrid=False, tickfont=dict(color="#2c3e50"),
-        showspikes=True, spikemode="across",
-        spikedash="dot", spikecolor="#555555",
+        showspikes=True, spikemode="across+toaxis",
+        spikedash="dot", spikecolor="#444444",
         spikethickness=1.5, spikesnap="cursor",
     )
+    fig.update_xaxes(**_spike, row=1, col=1)
+    fig.update_xaxes(**_spike, row=2, col=1)
+    fig.update_xaxes(**_spike, row=3, col=1)
+
     fig.update_layout(
         height=600,
         margin=dict(l=50, r=20, t=50, b=30),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                     font=dict(size=11, color="#2c3e50")),
-        hovermode="x unified",
-        hoverdistance=100,
+        hovermode="x",          # "x unified" 대신 "x" — 스파이크 라인이 더 확실히 동작
+        hoverdistance=200,
         spikedistance=1000,
         plot_bgcolor="white", paper_bgcolor="white",
         font=dict(color="#2c3e50", family="system-ui, -apple-system, sans-serif"),
