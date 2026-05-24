@@ -530,39 +530,59 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
 
     fig = make_subplots(
         rows=3, cols=1, shared_xaxes=True,
+        specs=[[{"secondary_y": True}],
+               [{"secondary_y": True}],
+               [{"secondary_y": True}]],
         row_heights=[0.44, 0.28, 0.28],
         vertical_spacing=0.04,
         subplot_titles=["AI Bubble Index", "S&P 500 (로그 스케일)", "SPX 고점 대비 낙폭 (%)"],
     )
 
-    # Regime bands on row 1
+    # ── Panel 1: Bubble Index (메인) ──
     for y0, y1, r in [(0,30,"green"),(30,55,"yellow"),(55,75,"orange"),(75,100,"red")]:
         fig.add_hrect(y0=y0, y1=y1, fillcolor=REGIME_BG[r], line_width=0, layer="below", row=1, col=1)
 
     fig.add_trace(go.Scatter(
         x=bi_a.index, y=bi_a.values, name="Bubble Index",
-        customdata=cdata,
-        line=dict(color="#1a1f2e", width=2), showlegend=True,
+        customdata=cdata, line=dict(color="#1a1f2e", width=2.5), showlegend=True,
         hovertemplate=_htpl,
-    ), row=1, col=1)
+    ), row=1, col=1, secondary_y=False)
     fig.add_hline(y=70, line_dash="dash", line_color="#e67e22", line_width=1.2, row=1, col=1)
 
+    # ── Panel 2: S&P 500 (메인) + Bubble Index (보조 우측 축, 반투명) ──
     fig.add_trace(go.Scatter(
         x=spx_a.index, y=spx_a.values, name="S&P 500",
-        customdata=cdata,
-        line=dict(color="#2980b9", width=1.8), showlegend=True,
+        customdata=cdata, line=dict(color="#2980b9", width=1.8), showlegend=True,
         hovertemplate=_htpl,
-    ), row=2, col=1)
+    ), row=2, col=1, secondary_y=False)
 
-    # Drawdown: fill below zero
+    fig.add_trace(go.Scatter(
+        x=bi_a.index, y=bi_a.values, name="Bubble Index (참조)",
+        line=dict(color="#1a1f2e", width=1.2, dash="dot"),
+        opacity=0.45, showlegend=True, hoverinfo="skip",
+    ), row=2, col=1, secondary_y=True)
+
+    # ── Panel 3: SPX 낙폭 (메인) + Bubble Index (보조 우측 축, 반투명) ──
     fig.add_trace(go.Scatter(
         x=dd_a.index, y=dd_a.values, name="SPX 낙폭",
-        customdata=cdata,
-        fill="tozeroy", fillcolor="rgba(231,76,60,.25)",
+        customdata=cdata, fill="tozeroy", fillcolor="rgba(231,76,60,.25)",
         line=dict(color="#c0392b", width=1), showlegend=True,
         hovertemplate=_htpl,
-    ), row=3, col=1)
+    ), row=3, col=1, secondary_y=False)
     fig.add_hline(y=-20, line_dash="dot", line_color="#7f8c8d", line_width=1, row=3, col=1)
+
+    fig.add_trace(go.Scatter(
+        x=bi_a.index, y=bi_a.values, name="Bubble Index (참조)",
+        line=dict(color="#1a1f2e", width=1.2, dash="dot"),
+        opacity=0.45, showlegend=False, hoverinfo="skip",
+    ), row=3, col=1, secondary_y=True)
+
+    # 보조 y축(Bubble Index 참조선) 설정 — 0~100 고정, 눈금 오른쪽에 표시
+    for row in [2, 3]:
+        fig.update_yaxes(range=[0, 100], secondary_y=True, row=row, col=1,
+                         tickfont=dict(color="#aaaaaa", size=9),
+                         showgrid=False, zeroline=False,
+                         title_text="Index", title_font=dict(color="#aaaaaa", size=9))
 
     # Crash event overlays
     event_colors = {"GFC": "#c0392b", "post_covid": "#8e44ad",
@@ -591,13 +611,23 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
                 borderpad=3, row=1, col=1,
             )
 
-    # y축: 각 패널별 명시 설정
-    fig.update_yaxes(range=[0, 100],  row=1, col=1, gridcolor="#e8ecf3",
-                     tickfont=dict(color="#2c3e50"))
-    fig.update_yaxes(type="log",      row=2, col=1, gridcolor="#e8ecf3",
-                     tickfont=dict(color="#2c3e50"))
-    fig.update_yaxes(range=[-65, 5],  row=3, col=1, gridcolor="#e8ecf3",
-                     tickfont=dict(color="#2c3e50"))
+    # 주(primary) y축 — secondary_y=False 명시해야 보조축에 영향 안 줌
+    fig.update_yaxes(range=[0, 100], secondary_y=False, row=1, col=1,
+                     gridcolor="#e8ecf3", tickfont=dict(color="#2c3e50"))
+    fig.update_yaxes(type="log",     secondary_y=False, row=2, col=1,
+                     gridcolor="#e8ecf3", tickfont=dict(color="#2c3e50"))
+    fig.update_yaxes(range=[-65, 5], secondary_y=False, row=3, col=1,
+                     gridcolor="#e8ecf3", tickfont=dict(color="#2c3e50"))
+
+    # 보조(secondary) y축 — Bubble Index 참조선 스케일 (0~100 선형)
+    _sec = dict(range=[0, 100], secondary_y=True,
+                showgrid=False, zeroline=False,
+                tickfont=dict(color="#b0b8c8", size=8),
+                title_text="Index", title_font=dict(color="#b0b8c8", size=8))
+    fig.update_yaxes(**_sec, row=2, col=1)
+    fig.update_yaxes(**_sec, row=3, col=1)
+    # 패널1 보조축은 사용 안 하므로 숨김
+    fig.update_yaxes(visible=False, secondary_y=True, row=1, col=1)
 
     # x축: 각 row 개별 적용
     _spike = dict(
@@ -611,12 +641,10 @@ def build_crash_chart(bi, spx, spx_dd, start="2004-01-01"):
     fig.update_xaxes(**_spike, row=3, col=1)
 
     fig.update_layout(
-        height=600,
-        margin=dict(l=50, r=20, t=50, b=30),
+        height=620,
+        margin=dict(l=50, r=55, t=50, b=30),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                     font=dict(size=11, color="#2c3e50")),
-        # hovermode="x": 각 패널에서 호버 시 customdata 기반 풍부한 툴팁 표시
-        # hoversubplots="axis": shared x-axis 패널들에 hover 이벤트 전파
         hovermode="x",
         hoversubplots="axis",
         hoverdistance=200,
