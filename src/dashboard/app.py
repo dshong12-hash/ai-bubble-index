@@ -639,22 +639,26 @@ def main():
     # TAB 1 — Main Dashboard
     # ════════════════════════════════════════════════════════════════════════
     with tab1:
-        # KPI row
-        c1, c2, c3, c4, c5 = st.columns(5)
+        # KPI row — 종합 지수 / 레짐 / 4개 필라 (점수 높은 순 정렬)
+        PILLAR_WEIGHT = {
+            "bond_vigilantes": "30%",
+            "concentration":   "20%",
+            "private_credit":  "35%",
+            "ipo_saturation":  "15%",
+        }
+        pillar_order = sorted(
+            PILLAR_WEIGHT.keys(),
+            key=lambda p: latest.get(p, 0) or 0,
+            reverse=True,
+        )
+        c1, c2, c3, c4, c5, c6 = st.columns(6)
         with c1: kpi("종합 지수", f"{bi_val:.1f}", "/ 100", r_color)
         with c2: kpi("레짐", REGIME_KO[regime], regime.upper(), r_color)
-        with c3:
-            v = latest.get("bond_vigilantes")
-            kpi("채권 자경단", f"{v:.0f}" if v and not pd.isna(v) else "—",
-                "30% 가중", PILLAR_COLOR["bond_vigilantes"])
-        with c4:
-            v = latest.get("concentration")
-            kpi("주도주 압착", f"{v:.0f}" if v and not pd.isna(v) else "—",
-                "20% 가중", PILLAR_COLOR["concentration"])
-        with c5:
-            v = latest.get("private_credit")
-            kpi("사모 크레딧", f"{v:.0f}" if v and not pd.isna(v) else "—",
-                "35% 가중", PILLAR_COLOR["private_credit"])
+        for col, p in zip([c3, c4, c5, c6], pillar_order):
+            v = latest.get(p)
+            with col:
+                kpi(PILLAR_KO[p], f"{v:.0f}" if v and not pd.isna(v) else "—",
+                    f"{PILLAR_WEIGHT[p]} 가중", PILLAR_COLOR[p])
 
         st.markdown("<br>", unsafe_allow_html=True)
 
