@@ -16,12 +16,26 @@ def _cfg() -> dict:
 
 
 def pillar_scores(normalized_df: pd.DataFrame) -> pd.DataFrame:
-    """Equal-weight mean of available metrics within each pillar → 0-100."""
+    """Equal-weight mean of available metrics within each pillar → 0-100.
+
+    Applies opacity_penalties from weights.yaml to pillars whose underlying
+    data relies on opaque / non-disclosed markets (e.g. private credit).
+    Penalty multiplier > 1.0 shifts the score upward (conservative correction);
+    result is capped at 100.
+    """
+    cfg = _cfg()
+    penalties: dict[str, float] = cfg.get("opacity_penalties", {})
+
     pillars: dict[str, pd.Series] = {}
     for pillar in sorted(set(METRIC_PILLAR.values())):
         cols = [c for c in normalized_df.columns if METRIC_PILLAR.get(c) == pillar]
         if cols:
-            pillars[pillar] = normalized_df[cols].mean(axis=1, skipna=True)
+            raw = normalized_df[cols].mean(axis=1, skipna=True)
+            multiplier = penalties.get(pillar, 1.0)
+            if multiplier != 1.0:
+                raw = (raw * multiplier).clip(upper=100)
+                log.info(f"Pillar '{pillar}': opacity penalty ×{multiplier:.2f} applied")
+            pillars[pillar] = raw
         else:
             log.warning(f"No metrics available for pillar '{pillar}'")
 

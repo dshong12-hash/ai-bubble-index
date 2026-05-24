@@ -21,6 +21,13 @@ rolling_window_months: 24
 # ---- EMA smoothing ----
 ema_span_days: 28  # ~4 weeks
 
+# ---- 불투명성 페널티 (opacity penalty) ----
+# 정보 공개 의무가 낮은 필라에 적용하는 상향 보정 배수.
+# 공개 시장 프록시 기반 측정의 과소평가 리스크를 반영.
+# 값이 클수록 보수적 (최대 100점 캡 적용).
+opacity_penalties:
+  private_credit: 1.20   # 사모 크레딧: 비공개 특성상 실제 리스크 과소평가 보정
+
 # ---- Metric definitions ----
 # direction: +1 = 값이 클수록 거품 신호, -1 = 작을수록 거품 신호 (부호 반전)
 metrics:
