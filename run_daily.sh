@@ -4,7 +4,9 @@
 
 set -euo pipefail
 
-PROJECT="$(cd "$(dirname "$0")" && pwd)"
+# launchd는 getcwd를 쓰는 cd+pwd 패턴에서 권한 오류 발생
+# $0 이 절대경로로 전달되므로 dirname 만으로 충분
+PROJECT="$(dirname "$0")"
 PYTHON="$PROJECT/.venv/bin/python"
 LOG_DIR="$PROJECT/logs"
 TODAY="$(date '+%Y-%m-%d')"

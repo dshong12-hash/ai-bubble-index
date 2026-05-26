@@ -36,14 +36,15 @@ jobs:
       - name: Validate (backtest + sensitivity)
         run: python -m src.run_validate
 
-      # processed/ parquet는 재생성 가능하므로 snapshots CSV만 커밋
-      - name: Commit snapshot
+      # raw + processed parquet + snapshots CSV 모두 커밋
+      # Streamlit Cloud 가 parquet 파일을 직접 읽으므로 함께 반영해야 함
+      - name: Commit data
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/snapshots/
+          git add data/raw/ data/processed/ data/snapshots/
           git diff --staged --quiet || \
-            git commit -m "data: daily snapshot $(date -u '+%Y-%m-%d')"
+            git commit -m "data: daily update $(date -u '+%Y-%m-%d')"
           git push
 
       # 최근 30일 스냅샷을 Actions 아티팩트로도 보관
