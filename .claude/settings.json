@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(launchctl list *)",
+      "Bash(gh secret list *)",
+      "mcp__computer-use__screenshot"
+    ]
+  }
+}
