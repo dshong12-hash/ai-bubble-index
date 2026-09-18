@@ -202,6 +202,11 @@ def load_sv():
     return pd.read_csv(p) if p.exists() else pd.DataFrame()
 
 @st.cache_data(ttl=300)
+def load_td():
+    p = DATA_PROCESSED / "threshold_drawdowns.csv"
+    return pd.read_csv(p) if p.exists() else pd.DataFrame()
+
+@st.cache_data(ttl=300)
 def load_metrics():
     p = DATA_PROCESSED / "metrics.parquet"
     return pd.read_parquet(p) if p.exists() else pd.DataFrame()
@@ -225,12 +230,17 @@ def build_narrative_html(scores_df: pd.DataFrame, metrics_df: pd.DataFrame,
     trend_cls  = "hl-r" if trend > 2 else ("hl-o" if trend > 0.3 else ("hl-g" if trend < -0.3 else "hl-bk"))
 
     # ── 과거 폭락 피크 참조 ────────────────────────────────────────────────
-    gfc_peak, pc_peak = 78.9, 70.1
+    gfc_peak, pc_peak = 78.9, 70.6
+    gfc_lead, pc_lead = 441, 39
     if not bt_df.empty:
         gfc_row = bt_df[bt_df["event"].str.contains("gfc", case=False, na=False)]
         pc_row  = bt_df[bt_df["event"].str.contains("covid", case=False, na=False)]
-        if not gfc_row.empty: gfc_peak = float(gfc_row["index_peak"].iloc[0])
-        if not pc_row.empty:  pc_peak  = float(pc_row["index_peak"].iloc[0])
+        if not gfc_row.empty:
+            gfc_peak = float(gfc_row["index_peak"].iloc[0])
+            if "lead_days" in gfc_row: gfc_lead = int(gfc_row["lead_days"].iloc[0])
+        if not pc_row.empty:
+            pc_peak  = float(pc_row["index_peak"].iloc[0])
+            if "lead_days" in pc_row:  pc_lead  = int(pc_row["lead_days"].iloc[0])
 
     dist70 = 70.0 - bi
 
@@ -301,7 +311,8 @@ def build_narrative_html(scores_df: pd.DataFrame, metrics_df: pd.DataFrame,
                    f"현재는 <b>포지션 유지하되 신용 스프레드 일별 모니터링</b>이 권장됩니다.")
     else:
         outlook = (f"지수가 경보 임계값(70점)을 <b>초과</b>했습니다. "
-                   f"GFC(78.9, 441일 선행)·Post-COVID(70.1, 48일 선행) 패턴과 유사한 구간에 진입했습니다. "
+                   f"GFC({gfc_peak:.1f}, {gfc_lead}일 선행)·Post-COVID({pc_peak:.1f}, {pc_lead}일 선행) "
+                   f"패턴과 유사한 구간에 진입했습니다. "
                    f"사모 크레딧 기둥의 동향을 <b>최우선 리스크 지표</b>로 추적하며, "
                    f"적극적인 리스크 헤지를 검토할 시점입니다.")
 
@@ -382,7 +393,12 @@ def compute_validation():
     spx_roll_max = spx.cummax()
     spx_dd = (spx - spx_roll_max) / spx_roll_max * 100
 
-    return bi, spx, spx_dd, fwd_table
+    # 12개월 선행 수익률과 지수의 상관계수 (신호 강도 지표)
+    fwd12 = spx.pct_change(252).shift(-252) * 100
+    corr_df = pd.DataFrame({"bi": bi, "fwd": fwd12}).dropna()
+    corr12  = float(corr_df["bi"].corr(corr_df["fwd"])) if len(corr_df) > 2 else float("nan")
+
+    return bi, spx, spx_dd, fwd_table, corr12
 
 # ── Chart builders ────────────────────────────────────────────────────────────
 def _band(fig, y0, y1, color, row=1):
@@ -684,6 +700,7 @@ def main():
     norm_df    = load_norm()
     bt_df      = load_bt()
     sv_df      = load_sv()
+    td_df      = load_td()
     metrics_df = load_metrics()
 
     valid = scores_df.dropna(subset=["bubble_index"])
@@ -809,25 +826,41 @@ def main():
     # TAB 2 — Validation / Crash Correlation
     # ════════════════════════════════════════════════════════════════════════
     with tab2:
-        bi_s, spx_s, spx_dd_s, fwd_table = compute_validation()
+        bi_s, spx_s, spx_dd_s, fwd_table, corr12 = compute_validation()
 
-        # Key insight cards
+        # Key insight cards — 값은 backtest.csv 에서 직접 읽어 매일 자동 반영
+        def ev(name, col, default=None):
+            if bt_df.empty:
+                return default
+            row = bt_df[bt_df["event"].str.contains(name, case=False, na=False)]
+            if row.empty or col not in row.columns or pd.isna(row[col].iloc[0]):
+                return default
+            return row[col].iloc[0]
+
+        gfc_lead   = ev("gfc",        "first_cross_lead_days", 474)
+        gfc_top    = ev("gfc",        "index_at_crash_top",    76.2)
+        pc_lead    = ev("covid",      "first_cross_lead_days", 63)
+        pc_dd      = ev("covid",      "spx_drawdown_pct",      -25.4)
+        gfc_reg    = regime_label(float(gfc_top)).upper() if gfc_top is not None else "RED"
+
         section("💡", "핵심 검증 결과")
         i1, i2, i3 = st.columns(3)
         with i1:
             insight("✅ GFC (2007~2009) — 선행 신호 확인",
-                    "지수가 <b>70</b>을 넘은 시점이 시장 고점 <b>474일(약 1.3년) 전</b>이었습니다. "
-                    "고점 당일 지수는 <b>76.2 (RED)</b>로 위험 구간을 유지했습니다.",
+                    f"지수가 <b>70</b>을 넘은 시점이 시장 고점 <b>{int(gfc_lead)}일"
+                    f"(약 {int(gfc_lead)/365:.1f}년) 전</b>이었습니다. "
+                    f"고점 당일 지수는 <b>{float(gfc_top):.1f} ({gfc_reg})</b>로 위험 구간을 유지했습니다.",
                     "#c0392b")
         with i2:
             insight("✅ Post-COVID 랠리 (2021~2022) — 선행 신호 확인",
-                    "지수가 70을 넘은 시점이 시장 고점 <b>48일 전</b>이었습니다. "
-                    "SPX 실제 낙폭 <b>-25.4%</b> 기간 동안 지수가 꾸준히 높은 수준을 유지했습니다.",
+                    f"지수가 70을 넘은 시점이 시장 고점 <b>{int(pc_lead)}일 전</b>이었습니다. "
+                    f"SPX 실제 낙폭 <b>{float(pc_dd):.1f}%</b> 기간 동안 지수가 꾸준히 높은 수준을 유지했습니다.",
                     "#8e44ad")
         with i3:
+            corr_str = f"{corr12:.3f}" if not np.isnan(corr12) else "N/A"
             insight("⚠️ 한계: 완벽한 타이밍 예측기가 아닙니다",
                     "2014~2015년, 2017~2018년에도 지수가 높았지만 대형 폭락은 없었습니다. "
-                    "12개월 상관계수 <b>r = -0.167</b> — 방향성은 있지만 신호 강도는 약합니다.",
+                    f"12개월 상관계수 <b>r = {corr_str}</b> — 방향성은 있지만 신호 강도는 약합니다.",
                     "#7f8c8d")
 
         st.markdown("<br>", unsafe_allow_html=True)
@@ -870,21 +903,28 @@ def main():
                              use_container_width=True, hide_index=True)
                 st.caption("선행일수: 지수 피크 → 시장 고점까지 일수")
 
-        # Threshold 70 drawdown summary
+        # Threshold 70 drawdown summary — 값은 threshold_drawdowns.csv 에서 직접 읽음
         st.markdown("<br>", unsafe_allow_html=True)
         section("📐", "Bubble Index ≥ 70 진입 후 SPX 최대 낙폭 (평균)")
-        dd_cols = st.columns(3)
-        labels_h = ["6개월 이내", "12개월 이내", "24개월 이내"]
-        avgs = [-5.7, -6.9, -13.9]
-        worsts = [-21.1, -23.9, -55.6]
-        for col, lbl, avg, worst in zip(dd_cols, labels_h, avgs, worsts):
-            with col:
-                st.markdown(f"""
-                <div class="kpi-card" style="--accent:#e74c3c">
-                    <div class="kpi-label">{lbl} 평균 낙폭</div>
-                    <div class="kpi-value" style="color:#e74c3c">{avg:.1f}%</div>
-                    <div class="kpi-sub">최악: {worst:.1f}%</div>
-                </div>""", unsafe_allow_html=True)
+        if not td_df.empty:
+            month_lbl = {6: "6개월 이내", 12: "12개월 이내", 24: "24개월 이내"}
+            td_sorted = td_df.sort_values("horizon_months")
+            dd_cols = st.columns(len(td_sorted))
+            for col, (_, r) in zip(dd_cols, td_sorted.iterrows()):
+                lbl   = month_lbl.get(int(r["horizon_months"]), f'{int(r["horizon_months"])}개월 이내')
+                avg   = r["avg_drawdown_pct"]
+                worst = r["worst_drawdown_pct"]
+                with col:
+                    st.markdown(f"""
+                    <div class="kpi-card" style="--accent:#e74c3c">
+                        <div class="kpi-label">{lbl} 평균 낙폭</div>
+                        <div class="kpi-value" style="color:#e74c3c">{avg:.1f}%</div>
+                        <div class="kpi-sub">최악: {worst:.1f}%</div>
+                    </div>""", unsafe_allow_html=True)
+            n_entries = int(td_sorted["n_entries"].iloc[0])
+            st.caption(f"지수가 70선을 상향 돌파한 {n_entries}회 사례 기준 · 진입가 대비 기간 내 최저점 낙폭")
+        else:
+            st.info("threshold_drawdowns.csv 가 없습니다. `python -m src.run_validate` 실행 후 표시됩니다.")
 
     # ════════════════════════════════════════════════════════════════════════
     # TAB 3 — Methodology
