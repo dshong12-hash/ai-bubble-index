@@ -1,5 +1,5 @@
 pillar,weight_pct,pillar_score,composite_base,+5pp,-5pp,impact_range
-concentration,20.0,15.5,60.2,57.4,63.0,5.66
-bond_vigilantes,30.0,94.6,60.2,62.2,58.2,4.07
-private_credit,35.0,48.9,60.2,60.7,59.7,1.07
-ipo_saturation,15.0,59.7,60.2,60.4,59.9,0.51
+concentration,20.0,25.6,59.9,57.2,62.7,5.47
+bond_vigilantes,30.0,95.7,59.9,62.0,57.9,4.18
+private_credit,35.0,44.8,59.9,60.4,59.5,0.87
+ipo_saturation,15.0,53.7,59.9,60.2,59.7,0.42
