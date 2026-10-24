@@ -8,7 +8,7 @@ import sys, traceback
 import pandas as pd
 
 from src.common import get_logger, DATA_PROCESSED
-from src.validate.backtest import analyze as backtest
+from src.validate.backtest import analyze as backtest, threshold_drawdowns
 from src.validate.sensitivity import analyze as sensitivity
 
 log = get_logger(__name__)
@@ -24,6 +24,11 @@ def main():
         bt = backtest(scores_df)
         bt.to_csv(DATA_PROCESSED / "backtest.csv", index=False)
         log.info(f"Saved → {DATA_PROCESSED / 'backtest.csv'}")
+
+        log.info("=== Threshold (≥70) drawdowns ===")
+        td = threshold_drawdowns(scores_df)
+        td.to_csv(DATA_PROCESSED / "threshold_drawdowns.csv", index=False)
+        log.info(f"Saved → {DATA_PROCESSED / 'threshold_drawdowns.csv'}")
 
         log.info("=== Sensitivity ===")
         sv = sensitivity(pillar_df)
